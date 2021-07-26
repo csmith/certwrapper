@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/go-acme/lego/v4/certcrypto"
+	"github.com/peterbourgon/ff/v3"
 )
 
 var (
@@ -26,7 +27,11 @@ var (
 )
 
 func parseFlags() {
-	flag.Parse()
+	if err := ff.Parse(flag.CommandLine, os.Args[1:], ff.WithEnvVarPrefix("CERTWRAPPER")); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to parse flags: %v\n\n", err)
+		flag.Usage()
+		os.Exit(1)
+	}
 
 	if *dnsProvider == "" {
 		fmt.Fprintf(os.Stderr, "DNS provider must be configured\n\n")

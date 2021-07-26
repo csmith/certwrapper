@@ -1,8 +1,7 @@
 # certwrapper
 
 `certwrapper` is a wrapper that requests and maintains a certificate from an ACME server (such as
-Let's Encrypt), and then runs another program that will make use of it.
-
+Let's Encrypt) using a DNS challenge, and then runs another program that will make use of it.
 The certificate is refreshed before it is due to expire, and the underlying process is SIGHUP'd.
 
 This is designed to be used by other services that accept PEM certificates but don't have their
@@ -39,6 +38,9 @@ Certwrapper options:
 The dns-provider option must be set to one of the providers supported by [Lego](https://go-acme.github.io/lego/dns/).
 Configuration for individual providers is done via environment variables, which are documented on the Lego provider
 page.
+
+Alternatively, `certwrapper` can be configured using environment variables prefixed with `CERTWRAPPER_`, for
+example the `private-key-path` flag can be set using a `CERTWRAPPER_PRIVATE_KEY_PATH` env var. 
 
 certwrapper will connect the target binary's stdin, stderr and stdout to its own. It will also relay any
 SIGINT, SIGTERM, SIGHUP, SIGUSR1 and SIGUSR2 signals to the child process.
