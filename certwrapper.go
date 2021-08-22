@@ -54,6 +54,7 @@ func parseFlags() {
 
 func main() {
 	parseFlags()
+	checkFilePermissions()
 
 	cm, err := NewCertificateManager(
 		certcrypto.KeyType(*keyType),
@@ -138,6 +139,26 @@ func monitorCertificate(cm *CertificateManager, cmd *exec.Cmd) {
 		select {
 		case <-ticker.C:
 			checkCertificate(cm, cmd)
+		}
+	}
+}
+
+func checkFilePermissions() {
+	canWrite := func(p string) bool {
+		const W_OK = 0x02
+		return syscall.Access(p, W_OK) == nil
+	}
+
+	paths := []string {
+		*userPath,
+		*privateKeyPath,
+		*certificatePath,
+		*issuerCertPath,
+	}
+	for i := range paths {
+		if !canWrite(paths[i]) {
+			fmt.Fprintf(os.Stderr, "Insufficient permissions to write to path: %s", paths[i])
+			os.Exit(8)
 		}
 	}
 }
