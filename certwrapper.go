@@ -12,6 +12,7 @@ import (
 
 	"github.com/go-acme/lego/v4/certcrypto"
 	"github.com/peterbourgon/ff/v3"
+	"golang.org/x/sys/unix"
 )
 
 var (
@@ -145,8 +146,7 @@ func monitorCertificate(cm *CertificateManager, cmd *exec.Cmd) {
 
 func checkFilePermissions() {
 	canWrite := func(p string) bool {
-		const W_OK = 0x02
-		return syscall.Access(p, W_OK) == nil
+		return syscall.Access(p, unix.W_OK) == nil
 	}
 
 	paths := []string {

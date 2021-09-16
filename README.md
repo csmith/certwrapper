@@ -44,3 +44,13 @@ example the `private-key-path` flag can be set using a `CERTWRAPPER_PRIVATE_KEY_
 
 certwrapper will connect the target binary's stdin, stderr and stdout to its own. It will also relay any
 SIGINT, SIGTERM, SIGHUP, SIGUSR1 and SIGUSR2 signals to the child process.
+
+## Build tags
+
+If you are building certwrapper and know in advance which DNS provider you wish to use, you can use a
+build tag to eliminate all of the others. This can significantly reduce the binary size and shave
+a second or two off the build times. Supported tags are:
+
+  *  `httpreq`
+
+Trying to use any other provider with one of these builds will result in an error.

@@ -14,7 +14,6 @@ import (
 	"github.com/go-acme/lego/v4/certcrypto"
 	"github.com/go-acme/lego/v4/certificate"
 	"github.com/go-acme/lego/v4/lego"
-	"github.com/go-acme/lego/v4/providers/dns"
 	"github.com/go-acme/lego/v4/registration"
 )
 
@@ -143,7 +142,7 @@ func (c *CertificateManager) createClient() error {
 		return err
 	}
 
-	provider, err := dns.NewDNSChallengeProviderByName(c.dnsProvider)
+	provider, err := c.createProvider()
 	if err != nil {
 		return err
 	}
