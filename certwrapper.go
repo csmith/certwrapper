@@ -157,7 +157,7 @@ func checkFilePermissions() {
 	}
 	for i := range paths {
 		if !canWrite(paths[i]) {
-			fmt.Fprintf(os.Stderr, "Insufficient permissions to write to path: %s", paths[i])
+			fmt.Fprintf(os.Stderr, "Insufficient permissions to write to path: %s\n", paths[i])
 			os.Exit(8)
 		}
 	}

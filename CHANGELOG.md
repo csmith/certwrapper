@@ -1,5 +1,7 @@
 # Unreleased
 
+- Fixed "insufficient permissions" error not printing a new line at the end.
+
 # v3.0.0
 
 - certwrapper will now exit if it can't write to any of the required paths before attempting to
