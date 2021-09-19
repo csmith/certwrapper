@@ -145,8 +145,8 @@ func monitorCertificate(cm *CertificateManager, cmd *exec.Cmd) {
 }
 
 func checkFilePermissions() {
-	canWrite := func(p string) bool {
-		return syscall.Access(p, unix.W_OK) == nil
+	canWrite := func(p string) error {
+		return syscall.Access(p, unix.W_OK)
 	}
 
 	paths := []string {
@@ -156,8 +156,8 @@ func checkFilePermissions() {
 		*issuerCertPath,
 	}
 	for i := range paths {
-		if !canWrite(paths[i]) {
-			fmt.Fprintf(os.Stderr, "Insufficient permissions to write to path: %s\n", paths[i])
+		if  err := canWrite(paths[i]); err != nil {
+			fmt.Fprintf(os.Stderr, "Insufficient permissions to write to path '%s': %v\n", paths[i], err)
 			os.Exit(8)
 		}
 	}
