@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
@@ -146,6 +147,11 @@ func monitorCertificate(cm *CertificateManager, cmd *exec.Cmd) {
 
 func checkFilePermissions() {
 	canWrite := func(p string) error {
+		if _, err := os.Stat(p); err == os.ErrNotExist {
+			// If the file doesn't exist we need to check write perms on the directory
+			return syscall.Access(filepath.Dir(p), unix.W_OK)
+		}
+
 		return syscall.Access(p, unix.W_OK)
 	}
 

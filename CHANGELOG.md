@@ -1,9 +1,14 @@
 # Unreleased
 
+# v3.1.1
+
+- Fixed "insufficient permissions" check being completely wrong if files hadn't already
+  been created.
+
 # v3.1.0
 
 - Fixed "insufficient permissions" error not printing a new line at the end.
-- Added more detail to insufficient permission errors
+- Added more detail to insufficient permission errors.
 
 # v3.0.0
 
