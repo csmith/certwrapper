@@ -1,5 +1,10 @@
 # Unreleased
 
+# v3.1.2
+
+- Fixed "insufficient permissions" check STILL being completely wrong if files hadn't already
+  been created.
+
 # v3.1.1
 
 - Fixed "insufficient permissions" check being completely wrong if files hadn't already

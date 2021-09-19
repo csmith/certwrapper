@@ -1,8 +1,10 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
+	"io/fs"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -147,7 +149,7 @@ func monitorCertificate(cm *CertificateManager, cmd *exec.Cmd) {
 
 func checkFilePermissions() {
 	canWrite := func(p string) error {
-		if _, err := os.Stat(p); err == os.ErrNotExist {
+		if _, err := os.Stat(p); errors.Is(err, fs.ErrNotExist) {
 			// If the file doesn't exist we need to check write perms on the directory
 			return syscall.Access(filepath.Dir(p), unix.W_OK)
 		}
@@ -155,14 +157,14 @@ func checkFilePermissions() {
 		return syscall.Access(p, unix.W_OK)
 	}
 
-	paths := []string {
+	paths := []string{
 		*userPath,
 		*privateKeyPath,
 		*certificatePath,
 		*issuerCertPath,
 	}
 	for i := range paths {
-		if  err := canWrite(paths[i]); err != nil {
+		if err := canWrite(paths[i]); err != nil {
 			fmt.Fprintf(os.Stderr, "Insufficient permissions to write to path '%s': %v\n", paths[i], err)
 			os.Exit(8)
 		}
