@@ -48,9 +48,12 @@ SIGINT, SIGTERM, SIGHUP, SIGUSR1 and SIGUSR2 signals to the child process.
 ## Build tags
 
 If you are building certwrapper and know in advance which DNS provider you wish to use, you can use a
-build tag to eliminate all of the others. This can significantly reduce the binary size and shave
-a second or two off the build times. Supported tags are:
+build tag to eliminate all the others. This can significantly reduce the binary size and shave
+a second or two off the build times. The build constraints take the format `lego_<provider>` e.g.
+`lego_cloudflare` or `lego_httpreq`. For example, building with just httpreq support:
 
-  *  `httpreq`
+```
+go build -tags lego_httpreq github.com/csmith/certwrapper
+```
 
 Trying to use any other provider with one of these builds will result in an error.

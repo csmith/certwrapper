@@ -1,5 +1,14 @@
 # Unreleased
 
+# v4.0.0
+
+- Switched to using [legotapas](https://github.com/csmith/legotapas) to provide build constraints
+  for DNS providers.
+  - **Breaking:** Previously building with the `httpreq` tag would produce a small binary with
+    only support for the httpreq DNS provider. This build tag has now changed to `lego_httpreq`.
+  - Builds specific to any other DNS provider can now be created with corresponding build
+    constraints.
+
 # v3.1.2
 
 - Fixed "insufficient permissions" check STILL being completely wrong if files hadn't already

@@ -11,6 +11,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/csmith/legotapas"
 	"github.com/go-acme/lego/v4/certcrypto"
 	"github.com/go-acme/lego/v4/certificate"
 	"github.com/go-acme/lego/v4/lego"
@@ -142,7 +143,7 @@ func (c *CertificateManager) createClient() error {
 		return err
 	}
 
-	provider, err := c.createProvider()
+	provider, err := legotapas.CreateProvider(c.dnsProvider)
 	if err != nil {
 		return err
 	}
