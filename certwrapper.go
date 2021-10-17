@@ -13,8 +13,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/csmith/envflag"
 	"github.com/go-acme/lego/v4/certcrypto"
-	"github.com/peterbourgon/ff/v3"
 	"golang.org/x/sys/unix"
 )
 
@@ -31,11 +31,7 @@ var (
 )
 
 func parseFlags() {
-	if err := ff.Parse(flag.CommandLine, os.Args[1:], ff.WithEnvVarPrefix("CERTWRAPPER")); err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to parse flags: %v\n\n", err)
-		flag.Usage()
-		os.Exit(1)
-	}
+	envflag.Parse(envflag.WithPrefix("CERTWRAPPER_"))
 
 	if *dnsProvider == "" {
 		fmt.Fprintf(os.Stderr, "DNS provider must be configured\n\n")

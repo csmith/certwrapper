@@ -1,5 +1,7 @@
 # Unreleased
 
+- Switched library used for environment variables. Should have no user-visible impact.
+
 # v4.0.0
 
 - Switched to using [legotapas](https://github.com/csmith/legotapas) to provide build constraints

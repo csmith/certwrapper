@@ -3,9 +3,9 @@ module github.com/csmith/certwrapper
 go 1.17
 
 require (
+	github.com/csmith/envflag v1.0.0
 	github.com/csmith/legotapas v1.0.0
 	github.com/go-acme/lego/v4 v4.5.3
-	github.com/peterbourgon/ff/v3 v3.1.0
 	golang.org/x/sys v0.0.0-20210615035016-665e8c7367d1
 )
 
