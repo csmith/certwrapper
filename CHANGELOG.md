@@ -1,6 +1,10 @@
 # Unreleased
 
+# v4.1.0
+
 - Switched library used for environment variables. Should have no user-visible impact.
+- Update to legotapas v1.1.0
+- Now renews certificates if they expire within 30 days instead of 7.
 
 # v4.0.0
 

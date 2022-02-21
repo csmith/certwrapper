@@ -206,7 +206,7 @@ func (c *CertificateManager) NeedsCertificate() bool {
 		return true
 	}
 
-	return pem.NotAfter.Before(time.Now().AddDate(0, 0, 7))
+	return pem.NotAfter.Before(time.Now().AddDate(0, 0, 30))
 }
 
 func (c *CertificateManager) getExpiry(cert *certificate.Resource) time.Time {
