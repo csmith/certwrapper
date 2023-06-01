@@ -1,5 +1,9 @@
 # Unreleased
 
+# v4.2.0
+
+- Update lego to v4.12.0
+
 # v4.1.0
 
 - Switched library used for environment variables. Should have no user-visible impact.
