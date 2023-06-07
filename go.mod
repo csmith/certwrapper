@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/csmith/envflag v1.0.0
 	github.com/csmith/legotapas v1.6.0
-	github.com/go-acme/lego/v4 v4.12.0
+	github.com/go-acme/lego/v4 v4.12.1
 	golang.org/x/sys v0.8.0
 )
 
