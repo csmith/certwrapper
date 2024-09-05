@@ -6,7 +6,7 @@ require (
 	github.com/csmith/envflag v1.0.0
 	github.com/csmith/legotapas v1.6.0
 	github.com/go-acme/lego/v4 v4.12.0
-	golang.org/x/sys v0.24.0
+	golang.org/x/sys v0.25.0
 )
 
 require (
