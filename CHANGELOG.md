@@ -1,16 +1,20 @@
-# Unreleased
+# Changelog
 
-# v4.2.0
+## 4.3.0 - 2025-05-18
+
+- Updated legotapas to v1.7.0
+
+## 4.2.0 - 2023-06-01
 
 - Update lego to v4.12.0
 
-# v4.1.0
+## 4.1.0 - 2022-02-21
 
 - Switched library used for environment variables. Should have no user-visible impact.
 - Update to legotapas v1.1.0
 - Now renews certificates if they expire within 30 days instead of 7.
 
-# v4.0.0
+## 4.0.0 - 2021-10-15
 
 - Switched to using [legotapas](https://github.com/csmith/legotapas) to provide build constraints
   for DNS providers.
@@ -19,32 +23,32 @@
   - Builds specific to any other DNS provider can now be created with corresponding build
     constraints.
 
-# v3.1.2
+## 3.1.2 - 2021-09-19
 
 - Fixed "insufficient permissions" check STILL being completely wrong if files hadn't already
   been created.
 
-# v3.1.1
+## 3.1.1 - 2021-09-19
 
 - Fixed "insufficient permissions" check being completely wrong if files hadn't already
   been created.
 
-# v3.1.0
+## 3.1.0 - 2021-09-19
 
 - Fixed "insufficient permissions" error not printing a new line at the end.
 - Added more detail to insufficient permission errors.
 
-# v3.0.0
+## 3.0.0 - 2021-09-16
 
 - certwrapper will now exit if it can't write to any of the required paths before attempting to
   obtain a certificate.
 - Update to Go 1.17
 - Support for building with only support for httpreq endpoints. This shaves about 30MB off the binary size. 
 
-# v2.0.0
+## 2.0.0 - 2021-07-26
 
 - Configuration of certwrapper can now be done using environment variables.
 
-# v1.0.0
+## 1.0.0 - 2021-06-17
 
-- Initial release
+_Initial release._
