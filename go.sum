@@ -841,8 +841,8 @@ github.com/cpuguy83/go-md2man/v2 v2.0.0-20190314233015-f79a8a8ca69d/go.mod h1:ma
 github.com/cpuguy83/go-md2man/v2 v2.0.0/go.mod h1:maD7wRr/U5Z6m/iR4s+kqSMx2CaBsrgA7czyZG/E6dU=
 github.com/cpuguy83/go-md2man/v2 v2.0.2/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46tRHOmNcaadrF8o=
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
-github.com/csmith/envflag v1.0.0 h1:ARMp9RyT/+1eMevJrB0cQeHxBlGpnoLSjuPdGVINzIA=
-github.com/csmith/envflag v1.0.0/go.mod h1:cE/k+xEpKPaIvo7Tz3RubNpWXRRf/WcI+bvPopn4VE0=
+github.com/csmith/envflag/v2 v2.0.0 h1:jho28W/psEqJ02EdbUHmkmFpbc5HFhog6NzHRbgtIFg=
+github.com/csmith/envflag/v2 v2.0.0/go.mod h1:GNzzXvZ2bC3z6tdoO45mTrs7l4Uht2WfBKaF1KQu0Pk=
 github.com/csmith/legotapas v1.8.0 h1:rNKMWPHLKwXlHYuuNullkGl48Tmev83LvFBE2EuFo4k=
 github.com/csmith/legotapas v1.8.0/go.mod h1:9jJuvyuX9GSrCIgpnpxrD9L9zHM+XNcXATrFqvliXcc=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
