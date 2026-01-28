@@ -13,7 +13,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/csmith/envflag"
+	"github.com/csmith/envflag/v2"
 	"github.com/go-acme/lego/v4/certcrypto"
 	"golang.org/x/sys/unix"
 )
