@@ -1,6 +1,6 @@
 module github.com/csmith/certwrapper
 
-go 1.24.0
+go 1.25.0
 
 toolchain go1.26.1
 
@@ -8,7 +8,7 @@ require (
 	github.com/csmith/envflag/v2 v2.0.0
 	github.com/csmith/legotapas v1.8.0
 	github.com/go-acme/lego/v4 v4.32.0
-	golang.org/x/sys v0.41.0
+	golang.org/x/sys v0.42.0
 )
 
 require (
