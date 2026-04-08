@@ -2,7 +2,7 @@ module github.com/csmith/certwrapper
 
 go 1.25.0
 
-toolchain go1.26.1
+toolchain go1.26.2
 
 require (
 	github.com/csmith/envflag/v2 v2.0.0
