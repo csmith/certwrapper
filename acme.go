@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto"
 	"crypto/ecdsa"
 	"crypto/elliptic"
@@ -11,27 +12,53 @@ import (
 	"os"
 	"time"
 
-	"github.com/csmith/legotapas"
+	"github.com/csmith/legotapas/v2"
+	"github.com/go-acme/lego/v5/acme"
 	"github.com/go-acme/lego/v5/certcrypto"
 	"github.com/go-acme/lego/v5/certificate"
 	"github.com/go-acme/lego/v5/lego"
 	"github.com/go-acme/lego/v5/registration"
 )
 
+type registrationResource struct {
+	Body acme.Account `json:"body"`
+	URI  string       `json:"uri,omitempty"`
+}
+
+func (r *registrationResource) toExtendedAccount() *acme.ExtendedAccount {
+	if r == nil {
+		return nil
+	}
+	return &acme.ExtendedAccount{
+		Account:  r.Body,
+		Location: r.URI,
+	}
+}
+
+func newRegistrationResource(ea *acme.ExtendedAccount) *registrationResource {
+	if ea == nil {
+		return nil
+	}
+	return &registrationResource{
+		Body: ea.Account,
+		URI:  ea.Location,
+	}
+}
+
 type AcmeUser struct {
-	Email        string                 `json:"email"`
-	Registration *registration.Resource `json:"registration,omitempty"`
-	LiveKey      *ecdsa.PrivateKey      `json:"-"`
-	Key          []byte                 `json:"key"`
+	Email        string                `json:"email"`
+	Registration *registrationResource `json:"registration,omitempty"`
+	LiveKey      *ecdsa.PrivateKey     `json:"-"`
+	Key          []byte                `json:"key"`
 }
 
 func (u *AcmeUser) GetEmail() string {
 	return u.Email
 }
-func (u AcmeUser) GetRegistration() *registration.Resource {
-	return u.Registration
+func (u *AcmeUser) GetRegistration() *acme.ExtendedAccount {
+	return u.Registration.toExtendedAccount()
 }
-func (u *AcmeUser) GetPrivateKey() crypto.PrivateKey {
+func (u *AcmeUser) GetPrivateKey() crypto.Signer {
 	return u.LiveKey
 }
 
@@ -136,7 +163,6 @@ func (c *CertificateManager) createClient() error {
 	config := lego.NewConfig(c.user)
 
 	config.CADirURL = c.acmeProvider
-	config.Certificate.KeyType = c.keyType
 
 	client, err := lego.NewClient(config)
 	if err != nil {
@@ -159,11 +185,11 @@ func (c *CertificateManager) createClient() error {
 
 func (c *CertificateManager) register() error {
 	if c.user.Registration == nil {
-		reg, err := c.client.Registration.Register(registration.RegisterOptions{TermsOfServiceAgreed: true})
+		reg, err := c.client.Registration.Register(context.Background(), registration.RegisterOptions{TermsOfServiceAgreed: true})
 		if err != nil {
 			return err
 		}
-		c.user.Registration = reg
+		c.user.Registration = newRegistrationResource(reg)
 		return c.save()
 	}
 	return nil
@@ -173,9 +199,10 @@ func (c *CertificateManager) ObtainCertificate() error {
 	request := certificate.ObtainRequest{
 		Domains: c.domains,
 		Bundle:  true,
+		KeyType: c.keyType,
 	}
 
-	cert, err := c.client.Certificate.Obtain(request)
+	cert, err := c.client.Certificate.Obtain(context.Background(), request)
 	if err != nil {
 		return err
 	}
@@ -212,7 +239,6 @@ func (c *CertificateManager) NeedsCertificate() bool {
 func (c *CertificateManager) getExpiry(cert *certificate.Resource) time.Time {
 	pem, err := certcrypto.ParsePEMCertificate(cert.Certificate)
 	if err != nil {
-		// Ruh roh. Say it's expired so we'll get a new one...
 		return time.Time{}
 	}
 
