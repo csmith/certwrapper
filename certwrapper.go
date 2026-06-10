@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/csmith/envflag/v2"
-	"github.com/go-acme/lego/v4/certcrypto"
+	"github.com/go-acme/lego/v5/certcrypto"
 	"golang.org/x/sys/unix"
 )
 
