@@ -8,7 +8,7 @@ require (
 	github.com/csmith/envflag/v2 v2.0.0
 	github.com/csmith/legotapas/v2 v2.0.0
 	github.com/go-acme/lego/v5 v5.1.0
-	golang.org/x/sys v0.45.0
+	golang.org/x/sys v0.46.0
 )
 
 require (
