@@ -7,7 +7,7 @@ toolchain go1.27.3
 require (
 	github.com/csmith/envflag/v2 v2.0.0
 	github.com/csmith/legotapas/v2 v2.0.0
-	github.com/go-acme/lego/v5 v5.5.1
+	github.com/go-acme/lego/v5 v5.5.2
 	golang.org/x/sys v0.48.0
 )
 
