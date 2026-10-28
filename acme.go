@@ -76,7 +76,11 @@ type CertificateManager struct {
 	issuerCertPath  string
 }
 
-func NewCertificateManager(keyType certcrypto.KeyType, acmeProvider, dnsProvider, metadataPath, privateKeyPath, certificatePath, issuerCertPath, email string, domains []string) (*CertificateManager, error) {
+func NewCertificateManager(
+	keyType certcrypto.KeyType,
+	acmeProvider, dnsProvider, metadataPath, privateKeyPath, certificatePath, issuerCertPath, email string,
+	domains []string,
+) (*CertificateManager, error) {
 	c := &CertificateManager{
 		acmeProvider: acmeProvider,
 		keyType:      keyType,
@@ -106,6 +110,47 @@ func NewCertificateManager(keyType certcrypto.KeyType, acmeProvider, dnsProvider
 	}
 
 	return c, nil
+}
+
+func (c *CertificateManager) ObtainCertificate() error {
+	request := certificate.ObtainRequest{
+		Domains: c.domains,
+		Bundle:  true,
+		KeyType: c.keyType,
+	}
+
+	cert, err := c.client.Certificate.Obtain(context.Background(), request)
+	if err != nil {
+		return err
+	}
+
+	if err := ioutil.WriteFile(c.certificatePath, cert.Certificate, os.FileMode(0600)); err != nil {
+		return err
+	}
+
+	if err := ioutil.WriteFile(c.privateKeyPath, cert.PrivateKey, os.FileMode(0600)); err != nil {
+		return err
+	}
+
+	if err := ioutil.WriteFile(c.issuerCertPath, cert.IssuerCertificate, os.FileMode(0600)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *CertificateManager) NeedsCertificate() bool {
+	b, err := ioutil.ReadFile(c.certificatePath)
+	if err != nil {
+		return true
+	}
+
+	pem, err := certcrypto.ParsePEMCertificate(b)
+	if err != nil {
+		return true
+	}
+
+	return pem.NotAfter.Before(time.Now().AddDate(0, 0, 30))
 }
 
 func (c *CertificateManager) load() error {
@@ -185,7 +230,8 @@ func (c *CertificateManager) createClient() error {
 
 func (c *CertificateManager) register() error {
 	if c.user.Registration == nil {
-		reg, err := c.client.Registration.Register(context.Background(), registration.RegisterOptions{TermsOfServiceAgreed: true})
+		opts := registration.RegisterOptions{TermsOfServiceAgreed: true}
+		reg, err := c.client.Registration.Register(context.Background(), opts)
 		if err != nil {
 			return err
 		}
@@ -193,54 +239,4 @@ func (c *CertificateManager) register() error {
 		return c.save()
 	}
 	return nil
-}
-
-func (c *CertificateManager) ObtainCertificate() error {
-	request := certificate.ObtainRequest{
-		Domains: c.domains,
-		Bundle:  true,
-		KeyType: c.keyType,
-	}
-
-	cert, err := c.client.Certificate.Obtain(context.Background(), request)
-	if err != nil {
-		return err
-	}
-
-	if err := ioutil.WriteFile(c.certificatePath, cert.Certificate, os.FileMode(0600)); err != nil {
-		return err
-	}
-
-	if err := ioutil.WriteFile(c.privateKeyPath, cert.PrivateKey, os.FileMode(0600)); err != nil {
-		return err
-	}
-
-	if err := ioutil.WriteFile(c.issuerCertPath, cert.IssuerCertificate, os.FileMode(0600)); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (c *CertificateManager) NeedsCertificate() bool {
-	b, err := ioutil.ReadFile(c.certificatePath)
-	if err != nil {
-		return true
-	}
-
-	pem, err := certcrypto.ParsePEMCertificate(b)
-	if err != nil {
-		return true
-	}
-
-	return pem.NotAfter.Before(time.Now().AddDate(0, 0, 30))
-}
-
-func (c *CertificateManager) getExpiry(cert *certificate.Resource) time.Time {
-	pem, err := certcrypto.ParsePEMCertificate(cert.Certificate)
-	if err != nil {
-		return time.Time{}
-	}
-
-	return pem.NotAfter
 }

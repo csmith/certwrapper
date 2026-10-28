@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
@@ -19,8 +20,12 @@ import (
 )
 
 var (
-	keyType         = flag.String("key-type", "P384", "Type of private key to use when generating a certificate.")
-	acmeEndpoint    = flag.String("acme-endpoint", "https://acme-v02.api.letsencrypt.org/directory", "ACME endpoint to request certificates from.")
+	keyType      = flag.String("key-type", "P384", "Type of private key to use when generating a certificate.")
+	acmeEndpoint = flag.String(
+		"acme-endpoint",
+		"https://acme-v02.api.letsencrypt.org/directory",
+		"ACME endpoint to request certificates from.",
+	)
 	dnsProvider     = flag.String("dns-provider", "", "DNS provider to use. See https://go-acme.github.io/lego/dns/.")
 	userPath        = flag.String("user-path", "cert/user.json", "Path to save user registration data.")
 	privateKeyPath  = flag.String("private-key-path", "cert/privatekey.pem", "Path to save the private key.")
@@ -82,7 +87,7 @@ func main() {
 	}
 
 	args := flag.Args()
-	cmd := exec.Command(args[0], args[1:]...)
+	cmd := exec.CommandContext(context.Background(), args[0], args[1:]...)
 	cmd.Stdin = os.Stdin
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
