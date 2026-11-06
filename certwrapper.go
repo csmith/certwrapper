@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -16,6 +17,8 @@ import (
 	"github.com/go-acme/lego/v5/certcrypto"
 	"golang.org/x/sys/unix"
 )
+
+const renewalCheckInterval = time.Hour
 
 var (
 	keyType      = flag.String("key-type", "P384", "Type of private key to use when generating a certificate.")
@@ -76,12 +79,9 @@ func main() {
 		os.Exit(2)
 	}
 
-	// See if we need to get a certificate before starting the process
-	if cm.NeedsCertificate() {
-		if err := cm.ObtainCertificate(); err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to obtain certificate: %v\n", err)
-			os.Exit(3)
-		}
+	if err := ensureCertificate(cm); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to obtain certificate: %v\n", err)
+		os.Exit(3)
 	}
 
 	args := flag.Args()
@@ -122,27 +122,49 @@ func waitForCommandToExit(cmd *exec.Cmd) {
 	os.Exit(0)
 }
 
-func checkCertificate(cm *CertificateManager, cmd *exec.Cmd) {
-	if cm.NeedsCertificate() {
-		if err := cm.ObtainCertificate(); err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to obtain certificate: %v\n", err)
-			os.Exit(6)
-		}
+type certificateRenewer interface {
+	NeedsCertificate() bool
+	HasValidCertificate() bool
+	ObtainCertificate() error
+}
 
-		if err := cmd.Process.Signal(syscall.SIGHUP); err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to signal child process: %v\n", err)
-			os.Exit(7)
-		}
+// ensureCertificate only returns an error if there's no certificate the child process could use.
+func ensureCertificate(cm certificateRenewer) error {
+	if !cm.NeedsCertificate() {
+		return nil
+	}
+
+	err := cm.ObtainCertificate()
+	if err != nil && cm.HasValidCertificate() {
+		slog.Warn("Failed to renew certificate, using the existing one", "error", err, "retry_in", renewalCheckInterval)
+		return nil
+	}
+	return err
+}
+
+func checkCertificate(cm certificateRenewer, reload func() error) {
+	if !cm.NeedsCertificate() {
+		return
+	}
+
+	if err := cm.ObtainCertificate(); err != nil {
+		slog.Error("Failed to renew certificate", "error", err, "retry_in", renewalCheckInterval)
+		return
+	}
+
+	if err := reload(); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to signal child process: %v\n", err)
+		os.Exit(7)
 	}
 }
 
-func monitorCertificate(cm *CertificateManager, cmd *exec.Cmd) {
-	ticker := time.NewTicker(time.Hour * 24)
-	for {
-		select {
-		case <-ticker.C:
-			checkCertificate(cm, cmd)
-		}
+func monitorCertificate(cm certificateRenewer, cmd *exec.Cmd) {
+	reload := func() error {
+		return cmd.Process.Signal(syscall.SIGHUP)
+	}
+
+	for range time.Tick(renewalCheckInterval) {
+		checkCertificate(cm, reload)
 	}
 }
 

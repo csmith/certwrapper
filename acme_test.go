@@ -8,6 +8,8 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"math/big"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
@@ -24,6 +26,13 @@ func newTestManager(t *testing.T) *CertificateManager {
 		certificatePath: filepath.Join(dir, "certificate.pem"),
 		privateKeyPath:  filepath.Join(dir, "privatekey.pem"),
 	}
+}
+
+func newTestUser(t *testing.T) *AcmeUser {
+	t.Helper()
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	require.NoError(t, err)
+	return &AcmeUser{LiveKey: key}
 }
 
 func generateKeyPair(t *testing.T, notBefore, notAfter time.Time) (certPEM, keyPEM []byte) {
@@ -89,6 +98,62 @@ func TestNeedsCertificate(t *testing.T) {
 			assert.True(t, newTestManager(t).NeedsCertificate())
 		},
 	)
+}
+
+func TestHasValidCertificate(t *testing.T) {
+	now := time.Now()
+	validCert, validKey := generateKeyPair(t, now.Add(-time.Hour), now.Add(time.Hour))
+	expiredCert, expiredKey := generateKeyPair(t, now.Add(-2*time.Hour), now.Add(-time.Hour))
+	futureCert, futureKey := generateKeyPair(t, now.Add(time.Hour), now.Add(2*time.Hour))
+
+	tests := []struct {
+		name     string
+		cert     []byte
+		key      []byte
+		expected bool
+	}{
+		{"within its validity period", validCert, validKey, true},
+		{"expired", expiredCert, expiredKey, false},
+		{"not yet valid", futureCert, futureKey, false},
+		{"key doesn't match certificate", validCert, expiredKey, false},
+	}
+	for _, tt := range tests {
+		t.Run(
+			tt.name,
+			func(t *testing.T) {
+				c := newTestManager(t)
+				writeKeyPair(t, c, tt.cert, tt.key)
+				assert.Equal(t, tt.expected, c.HasValidCertificate())
+			},
+		)
+	}
+
+	t.Run(
+		"no files",
+		func(t *testing.T) {
+			assert.False(t, newTestManager(t).HasValidCertificate())
+		},
+	)
+}
+
+func TestObtainCertificate_keepsExistingFilesWhenServerUnavailable(t *testing.T) {
+	server := httptest.NewTLSServer(http.NotFoundHandler())
+	server.Close()
+
+	now := time.Now()
+	certPEM, keyPEM := generateKeyPair(t, now.Add(-time.Hour), now.AddDate(0, 0, 10))
+
+	c := newTestManager(t)
+	c.acmeProvider = server.URL
+	c.user = newTestUser(t)
+	writeKeyPair(t, c, certPEM, keyPEM)
+
+	require.Error(t, c.ObtainCertificate())
+
+	assert.True(t, c.HasValidCertificate())
+	content, err := os.ReadFile(c.certificatePath)
+	require.NoError(t, err)
+	assert.Equal(t, certPEM, content)
 }
 
 func TestWriteFileAtomic_replacesFileAndTightensPermissions(t *testing.T) {

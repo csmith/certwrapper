@@ -17,6 +17,7 @@ import (
 	"github.com/go-acme/lego/v5/acme"
 	"github.com/go-acme/lego/v5/certcrypto"
 	"github.com/go-acme/lego/v5/certificate"
+	"github.com/go-acme/lego/v5/challenge"
 	"github.com/go-acme/lego/v5/lego"
 	"github.com/go-acme/lego/v5/registration"
 )
@@ -66,7 +67,7 @@ func (u *AcmeUser) GetPrivateKey() crypto.Signer {
 type CertificateManager struct {
 	acmeProvider string
 	keyType      certcrypto.KeyType
-	dnsProvider  string
+	dnsProvider  challenge.Provider
 	client       *lego.Client
 	user         *AcmeUser
 	domains      []string
@@ -79,9 +80,14 @@ type CertificateManager struct {
 
 func NewCertificateManager(
 	keyType certcrypto.KeyType,
-	acmeProvider, dnsProvider, metadataPath, privateKeyPath, certificatePath, issuerCertPath, email string,
+	acmeProvider, dnsProviderName, metadataPath, privateKeyPath, certificatePath, issuerCertPath, email string,
 	domains []string,
 ) (*CertificateManager, error) {
+	dnsProvider, err := legotapas.CreateProvider(dnsProviderName)
+	if err != nil {
+		return nil, err
+	}
+
 	c := &CertificateManager{
 		acmeProvider: acmeProvider,
 		keyType:      keyType,
@@ -102,18 +108,14 @@ func NewCertificateManager(
 		return nil, err
 	}
 
-	if err := c.createClient(); err != nil {
-		return nil, err
-	}
-
-	if err := c.register(); err != nil {
-		return nil, err
-	}
-
 	return c, nil
 }
 
 func (c *CertificateManager) ObtainCertificate() error {
+	if err := c.connect(); err != nil {
+		return err
+	}
+
 	request := certificate.ObtainRequest{
 		Domains: c.domains,
 		Bundle:  true,
@@ -143,6 +145,28 @@ func (c *CertificateManager) NeedsCertificate() bool {
 	}
 
 	return cert.NotAfter.Before(time.Now().AddDate(0, 0, 30))
+}
+
+func (c *CertificateManager) HasValidCertificate() bool {
+	cert, err := c.loadCertificate()
+	if err != nil {
+		return false
+	}
+
+	now := time.Now()
+	return !now.Before(cert.NotBefore) && now.Before(cert.NotAfter)
+}
+
+// connect is deferred until a certificate is needed, as creating the client contacts the ACME
+// server and an existing certificate should remain usable while that server is unavailable.
+func (c *CertificateManager) connect() error {
+	if c.client == nil {
+		if err := c.createClient(); err != nil {
+			return err
+		}
+	}
+
+	return c.register()
 }
 
 // loadCertificate fails if the private key on disk doesn't match the certificate.
@@ -216,12 +240,7 @@ func (c *CertificateManager) createClient() error {
 		return err
 	}
 
-	provider, err := legotapas.CreateProvider(c.dnsProvider)
-	if err != nil {
-		return err
-	}
-
-	err = client.Challenge.SetDNS01Provider(provider)
+	err = client.Challenge.SetDNS01Provider(c.dnsProvider)
 	if err != nil {
 		return err
 	}

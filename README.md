@@ -3,6 +3,8 @@
 `certwrapper` is a wrapper that requests and maintains a certificate from an ACME server (such as
 Let's Encrypt) using a DNS challenge, and then runs another program that will make use of it.
 The certificate is refreshed before it is due to expire, and the underlying process is SIGHUP'd.
+If a renewal fails, certwrapper logs the error and tries again an hour later. It only refuses to start the
+underlying process if it can't obtain a certificate and doesn't already have a valid one.
 
 This is designed to be used by other services that accept PEM certificates but don't have their
 own way of requesting ACME certificates; it's a bit nicer than having separate scripts to manage
