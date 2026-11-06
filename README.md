@@ -45,6 +45,10 @@ example the `private-key-path` flag can be set using a `CERTWRAPPER_PRIVATE_KEY_
 certwrapper will connect the target binary's stdin, stderr and stdout to its own. It will also relay any
 SIGINT, SIGTERM, SIGHUP, SIGUSR1 and SIGUSR2 signals to the child process.
 
+Saved files are replaced atomically with new files with `0600` permissions, so certwrapper needs write access
+to the directories containing them. If you're using containers, mount those directories rather than the individual
+files, as a file that is itself a mount point can't be replaced.
+
 ## Build tags
 
 If you are building certwrapper and know in advance which DNS provider you wish to use, you can use a

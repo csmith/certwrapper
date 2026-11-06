@@ -8,6 +8,7 @@ require (
 	github.com/csmith/envflag/v2 v2.0.0
 	github.com/csmith/legotapas/v2 v2.0.0
 	github.com/go-acme/lego/v5 v5.5.2
+	github.com/stretchr/testify v1.12.1
 	golang.org/x/sys v0.49.0
 )
 
@@ -164,7 +165,6 @@ require (
 	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/spf13/viper v1.20.1 // indirect
 	github.com/stretchr/objx v0.5.3 // indirect
-	github.com/stretchr/testify v1.12.1 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.3.177 // indirect
 	github.com/tjfoc/gmsm v1.4.1 // indirect

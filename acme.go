@@ -6,10 +6,11 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
-	"io/ioutil"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/csmith/legotapas/v2"
@@ -124,38 +125,39 @@ func (c *CertificateManager) ObtainCertificate() error {
 		return err
 	}
 
-	if err := ioutil.WriteFile(c.certificatePath, cert.Certificate, os.FileMode(0600)); err != nil {
+	if err := writeFileAtomic(c.privateKeyPath, cert.PrivateKey); err != nil {
 		return err
 	}
 
-	if err := ioutil.WriteFile(c.privateKeyPath, cert.PrivateKey, os.FileMode(0600)); err != nil {
+	if err := writeFileAtomic(c.certificatePath, cert.Certificate); err != nil {
 		return err
 	}
 
-	if err := ioutil.WriteFile(c.issuerCertPath, cert.IssuerCertificate, os.FileMode(0600)); err != nil {
-		return err
-	}
-
-	return nil
+	return writeFileAtomic(c.issuerCertPath, cert.IssuerCertificate)
 }
 
 func (c *CertificateManager) NeedsCertificate() bool {
-	b, err := ioutil.ReadFile(c.certificatePath)
+	cert, err := c.loadCertificate()
 	if err != nil {
 		return true
 	}
 
-	pem, err := certcrypto.ParsePEMCertificate(b)
+	return cert.NotAfter.Before(time.Now().AddDate(0, 0, 30))
+}
+
+// loadCertificate fails if the private key on disk doesn't match the certificate.
+func (c *CertificateManager) loadCertificate() (*x509.Certificate, error) {
+	pair, err := tls.LoadX509KeyPair(c.certificatePath, c.privateKeyPath)
 	if err != nil {
-		return true
+		return nil, err
 	}
 
-	return pem.NotAfter.Before(time.Now().AddDate(0, 0, 30))
+	return pair.Leaf, nil
 }
 
 func (c *CertificateManager) load() error {
 	user := &AcmeUser{}
-	buf, _ := ioutil.ReadFile(c.metadataPath)
+	buf, _ := os.ReadFile(c.metadataPath)
 	if buf != nil {
 		err := json.Unmarshal(buf, user)
 		if err != nil {
@@ -179,7 +181,7 @@ func (c *CertificateManager) save() error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(c.metadataPath, data, 0600)
+	return writeFileAtomic(c.metadataPath, data)
 }
 
 func (c *CertificateManager) createUser(email string) error {
@@ -239,4 +241,31 @@ func (c *CertificateManager) register() error {
 		return c.save()
 	}
 	return nil
+}
+
+// writeFileAtomic replaces path with a new file with 0600 permissions, leaving any existing file
+// untouched if the write fails. The path's directory must be writable.
+func writeFileAtomic(path string, data []byte) error {
+	tmp, err := os.CreateTemp(filepath.Dir(path), "."+filepath.Base(path)+".*")
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = tmp.Close()
+		_ = os.Remove(tmp.Name())
+	}()
+
+	if _, err := tmp.Write(data); err != nil {
+		return err
+	}
+
+	if err := tmp.Sync(); err != nil {
+		return err
+	}
+
+	if err := tmp.Close(); err != nil {
+		return err
+	}
+
+	return os.Rename(tmp.Name(), path)
 }
