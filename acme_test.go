@@ -65,8 +65,11 @@ func writeKeyPair(t *testing.T, c *CertificateManager, certPEM, keyPEM []byte) {
 
 func TestNeedsCertificate(t *testing.T) {
 	now := time.Now()
-	longLivedCert, longLivedKey := generateKeyPair(t, now.Add(-time.Hour), now.AddDate(0, 0, 60))
-	expiringCert, expiringKey := generateKeyPair(t, now.Add(-time.Hour), now.AddDate(0, 0, 29))
+	day := 24 * time.Hour
+	longLivedCert, longLivedKey := generateKeyPair(t, now.Add(-59*day), now.Add(31*day))
+	expiringCert, expiringKey := generateKeyPair(t, now.Add(-61*day), now.Add(29*day))
+	freshShortCert, freshShortKey := generateKeyPair(t, now.Add(-time.Hour), now.Add(6*day-time.Hour))
+	expiringShortCert, expiringShortKey := generateKeyPair(t, now.Add(-5*day), now.Add(day))
 	_, otherKey := generateKeyPair(t, now.Add(-time.Hour), now.AddDate(0, 0, 60))
 
 	tests := []struct {
@@ -75,8 +78,10 @@ func TestNeedsCertificate(t *testing.T) {
 		key      []byte
 		expected bool
 	}{
-		{"valid outside the renewal window", longLivedCert, longLivedKey, false},
-		{"inside the renewal window", expiringCert, expiringKey, true},
+		{"more than a third of its lifetime left", longLivedCert, longLivedKey, false},
+		{"less than a third of its lifetime left", expiringCert, expiringKey, true},
+		{"newly issued short-lived certificate", freshShortCert, freshShortKey, false},
+		{"short-lived certificate near expiry", expiringShortCert, expiringShortKey, true},
 		{"key doesn't match certificate", longLivedCert, otherKey, true},
 		{"truncated key", longLivedCert, longLivedKey[:10], true},
 		{"empty certificate", []byte{}, longLivedKey, true},

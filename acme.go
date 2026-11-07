@@ -144,7 +144,7 @@ func (c *CertificateManager) NeedsCertificate() bool {
 		return true
 	}
 
-	return cert.NotAfter.Before(time.Now().AddDate(0, 0, 30))
+	return time.Until(cert.NotAfter) < cert.NotAfter.Sub(cert.NotBefore)/3
 }
 
 func (c *CertificateManager) HasValidCertificate() bool {
