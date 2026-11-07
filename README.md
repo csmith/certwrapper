@@ -29,6 +29,10 @@ Certwrapper options:
         Path to save the issuer's certificate. (default "cert/issuer.pem")
   -key-type string
         Type of private key to use when generating a certificate. One of: EC256, EC384, RSA2048, RSA3072, RSA4096, RSA8192. (default "EC384")
+  -log.format string
+        Format of log output ('json' or 'text') (default "text")
+  -log.level string
+        Lowest level of logs that should be output
   -private-key-path string
         Path to save the private key. (default "cert/privatekey.pem")
   -strip-env string
@@ -50,6 +54,8 @@ example the `private-key-path` flag can be set using a `CERTWRAPPER_PRIVATE_KEY_
 The target inherits certwrapper's environment, except for the `CERTWRAPPER_` variables and anything listed in
 `strip-env`. Use it to keep DNS provider credentials out of the target's environment, for example
 `-strip-env 'CF_*,CLOUDFLARE_*'`, so they can't end up in its logs or error pages.
+
+certwrapper logs to stderr. `log.level` is one of `debug`, `info` (the default), `warn` or `error`.
 
 certwrapper will connect the target binary's stdin, stderr and stdout to its own. It will also relay any
 SIGINT, SIGTERM, SIGHUP, SIGUSR1 and SIGUSR2 signals to the child process.

@@ -828,6 +828,8 @@ github.com/csmith/envflag/v2 v2.0.0 h1:jho28W/psEqJ02EdbUHmkmFpbc5HFhog6NzHRbgtI
 github.com/csmith/envflag/v2 v2.0.0/go.mod h1:GNzzXvZ2bC3z6tdoO45mTrs7l4Uht2WfBKaF1KQu0Pk=
 github.com/csmith/legotapas/v2 v2.0.0 h1:WuAPwihy4Vd31VHgR2snQUFLzug1nAjOhXCpiggKO3M=
 github.com/csmith/legotapas/v2 v2.0.0/go.mod h1:DqYy/bv5D5ZtTV2lFFABPgFm5ixvJmXGr4js/282BeY=
+github.com/csmith/slogflags v1.2.0 h1:NhDhmnZGI2qab9acWsXvaRin/YsQJB+JtyANKvIxEzw=
+github.com/csmith/slogflags v1.2.0/go.mod h1:bauVbR8CshU26FTB8K7XYqnkIV6iUKOxkNP76IdZkqk=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc h1:U9qPSI2PIWSS1VwoXQT9A3Wy9MM3WgvqSxFWenqJduM=

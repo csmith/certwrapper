@@ -16,7 +16,9 @@ import (
 	"time"
 
 	"github.com/csmith/envflag/v2"
+	"github.com/csmith/slogflags"
 	"github.com/go-acme/lego/v5/certcrypto"
+	legolog "github.com/go-acme/lego/v5/log"
 	"golang.org/x/sys/unix"
 )
 
@@ -59,32 +61,33 @@ func parseFlags() certcrypto.KeyType {
 	}
 	envflag.Parse(envflag.WithPrefix("CERTWRAPPER_"))
 
+	// lego logs to stdout by default, which the target shares.
+	legolog.SetDefault(slogflags.Logger(slogflags.WithSetDefault(true), slogflags.WithWriter(os.Stderr)))
+
 	kt, err := parseKeyType(*keyType)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Key type '%s' is not supported\n\n", *keyType)
-		flag.Usage()
-		os.Exit(1)
+		usageError("Key type is not supported", "key_type", *keyType)
 	}
 
 	if *dnsProvider == "" {
-		fmt.Fprintf(os.Stderr, "DNS provider must be configured\n\n")
-		flag.Usage()
-		os.Exit(1)
+		usageError("DNS provider must be configured")
 	}
 
 	if *domains == "" {
-		fmt.Fprintf(os.Stderr, "Domains must be configured\n\n")
-		flag.Usage()
-		os.Exit(1)
+		usageError("Domains must be configured")
 	}
 
 	if *acmeEmail == "" {
-		fmt.Fprintf(os.Stderr, "ACME e-mail address must be configured\n\n")
-		flag.Usage()
-		os.Exit(1)
+		usageError("ACME e-mail address must be configured")
 	}
 
 	return kt
+}
+
+func usageError(msg string, args ...any) {
+	slog.Error(msg, args...)
+	flag.Usage()
+	os.Exit(1)
 }
 
 // parseKeyType also accepts the names used by certwrapper v4, so existing configuration keeps working.
@@ -129,20 +132,18 @@ func main() {
 	)
 
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to create certificate manager: %v\n", err)
+		slog.Error("Failed to create certificate manager", "error", err)
 		os.Exit(2)
 	}
 
 	if err := ensureCertificate(cm); err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to obtain certificate: %v\n", err)
+		slog.Error("Failed to obtain certificate", "error", err)
 		os.Exit(3)
 	}
 
 	args := flag.Args()
 	if len(args) == 0 {
-		fmt.Fprintf(os.Stderr, "Target command must be specified\n\n")
-		flag.Usage()
-		os.Exit(1)
+		usageError("Target command must be specified")
 	}
 
 	cmd := exec.CommandContext(context.Background(), args[0], args[1:]...)
@@ -152,7 +153,7 @@ func main() {
 	cmd.Stdout = os.Stdout
 
 	if err := cmd.Start(); err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to run application: %v\n", err)
+		slog.Error("Failed to run application", "error", err)
 		os.Exit(4)
 	}
 
@@ -189,7 +190,7 @@ func proxySignals(cmd *exec.Cmd) {
 	for {
 		sig := <-sigs
 		if err := cmd.Process.Signal(sig); err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to signal child process: %v\n", err)
+			slog.Error("Failed to signal child process", "error", err)
 			os.Exit(7)
 		}
 	}
@@ -197,7 +198,7 @@ func proxySignals(cmd *exec.Cmd) {
 
 func waitForCommandToExit(cmd *exec.Cmd) {
 	if err := cmd.Wait(); err != nil {
-		fmt.Fprintf(os.Stderr, "Application failed: %v\n", err)
+		slog.Error("Application failed", "error", err)
 		os.Exit(5)
 	}
 
@@ -235,7 +236,7 @@ func checkCertificate(cm certificateRenewer, reload func() error) {
 	}
 
 	if err := reload(); err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to signal child process: %v\n", err)
+		slog.Error("Failed to signal child process", "error", err)
 		os.Exit(7)
 	}
 }
@@ -259,7 +260,7 @@ func checkFilePermissions() {
 	}
 	for i := range paths {
 		if err := canReplaceFile(paths[i]); err != nil {
-			fmt.Fprintf(os.Stderr, "Insufficient permissions to write to path '%s': %v\n", paths[i], err)
+			slog.Error("Unable to replace file", "path", paths[i], "error", err)
 			os.Exit(8)
 		}
 	}
