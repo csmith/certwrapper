@@ -56,7 +56,7 @@ SIGINT, SIGTERM, SIGHUP, SIGUSR1 and SIGUSR2 signals to the child process.
 
 Saved files are replaced atomically with new files with `0600` permissions, so certwrapper needs write access
 to the directories containing them. If you're using containers, mount those directories rather than the individual
-files, as a file that is itself a mount point can't be replaced.
+files, as a file that is itself a mount point can't be replaced. certwrapper exits at startup if it finds one.
 
 ## Build tags
 

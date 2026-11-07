@@ -15,6 +15,11 @@ import (
 func TestCanReplaceFile(t *testing.T) {
 	dir := t.TempDir()
 	require.NoError(t, canReplaceFile(filepath.Join(dir, "missing")))
+
+	existing := filepath.Join(dir, "existing")
+	require.NoError(t, os.WriteFile(existing, nil, 0600))
+	require.NoError(t, canReplaceFile(existing))
+
 	assert.Error(t, canReplaceFile(filepath.Join(dir, "no-such-dir", "file")))
 }
 

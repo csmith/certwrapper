@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log/slog"
@@ -265,5 +266,16 @@ func checkFilePermissions() {
 }
 
 func canReplaceFile(path string) error {
-	return syscall.Access(filepath.Dir(path), unix.W_OK|unix.X_OK)
+	if err := syscall.Access(filepath.Dir(path), unix.W_OK|unix.X_OK); err != nil {
+		return err
+	}
+
+	mounted, err := isMountPoint(path)
+	if err != nil {
+		return err
+	}
+	if mounted {
+		return errors.New("the file is a mount point, so it can't be replaced; mount its directory instead")
+	}
+	return nil
 }
