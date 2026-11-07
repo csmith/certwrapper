@@ -41,6 +41,14 @@ var (
 )
 
 func parseFlags() certcrypto.KeyType {
+	flag.Usage = func() {
+		_, _ = fmt.Fprintf(
+			flag.CommandLine.Output(),
+			"Usage: %s [options] /path/to/target [target options]\n\nOptions:\n",
+			os.Args[0],
+		)
+		flag.PrintDefaults()
+	}
 	envflag.Parse(envflag.WithPrefix("CERTWRAPPER_"))
 
 	kt, err := parseKeyType(*keyType)
@@ -123,6 +131,12 @@ func main() {
 	}
 
 	args := flag.Args()
+	if len(args) == 0 {
+		fmt.Fprintf(os.Stderr, "Target command must be specified\n\n")
+		flag.Usage()
+		os.Exit(1)
+	}
+
 	cmd := exec.CommandContext(context.Background(), args[0], args[1:]...)
 	cmd.Stdin = os.Stdin
 	cmd.Stderr = os.Stderr
