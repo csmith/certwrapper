@@ -21,7 +21,11 @@ import (
 const renewalCheckInterval = time.Hour
 
 var (
-	keyType      = flag.String("key-type", "P384", "Type of private key to use when generating a certificate.")
+	keyType = flag.String(
+		"key-type",
+		"EC384",
+		"Type of private key to use when generating a certificate. One of: "+keyTypeNames()+".",
+	)
 	acmeEndpoint = flag.String(
 		"acme-endpoint",
 		"https://acme-v02.api.letsencrypt.org/directory",
@@ -36,8 +40,15 @@ var (
 	domains         = flag.String("domains", "", "Comma-separated list of domains to request on the certificate.")
 )
 
-func parseFlags() {
+func parseFlags() certcrypto.KeyType {
 	envflag.Parse(envflag.WithPrefix("CERTWRAPPER_"))
+
+	kt, err := parseKeyType(*keyType)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Key type '%s' is not supported\n\n", *keyType)
+		flag.Usage()
+		os.Exit(1)
+	}
 
 	if *dnsProvider == "" {
 		fmt.Fprintf(os.Stderr, "DNS provider must be configured\n\n")
@@ -56,14 +67,41 @@ func parseFlags() {
 		flag.Usage()
 		os.Exit(1)
 	}
+
+	return kt
+}
+
+// parseKeyType also accepts the names used by certwrapper v4, so existing configuration keeps working.
+func parseKeyType(name string) (certcrypto.KeyType, error) {
+	legacy := map[string]certcrypto.KeyType{
+		"P256": certcrypto.EC256,
+		"P384": certcrypto.EC384,
+		"2048": certcrypto.RSA2048,
+		"3072": certcrypto.RSA3072,
+		"4096": certcrypto.RSA4096,
+		"8192": certcrypto.RSA8192,
+	}
+	if kt, ok := legacy[strings.ToUpper(name)]; ok {
+		return kt, nil
+	}
+	return certcrypto.ToKeyType(name)
+}
+
+func keyTypeNames() string {
+	keyTypes := certcrypto.AllKeyTypes()
+	names := make([]string, 0, len(keyTypes))
+	for _, kt := range keyTypes {
+		names = append(names, string(kt))
+	}
+	return strings.Join(names, ", ")
 }
 
 func main() {
-	parseFlags()
+	kt := parseFlags()
 	checkFilePermissions()
 
 	cm, err := NewCertificateManager(
-		certcrypto.KeyType(*keyType),
+		kt,
 		*acmeEndpoint,
 		*dnsProvider,
 		*userPath,

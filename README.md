@@ -28,7 +28,7 @@ Certwrapper options:
   -issuer-path string
         Path to save the issuer's certificate. (default "cert/issuer.pem")
   -key-type string
-        Type of private key to use when generating a certificate. (default "P384")
+        Type of private key to use when generating a certificate. One of: EC256, EC384, RSA2048, RSA3072, RSA4096, RSA8192. (default "EC384")
   -private-key-path string
         Path to save the private key. (default "cert/privatekey.pem")
   -user-path string
@@ -36,6 +36,7 @@ Certwrapper options:
 ```
 
 `acme-email`, `domains` and `dns-provider` are required options. Everything else has sensible defaults.
+Key types from certwrapper v4, such as `P384`, are still accepted.
 
 The dns-provider option must be set to one of the providers supported by [Lego](https://go-acme.github.io/lego/dns/).
 Configuration for individual providers is done via environment variables, which are documented on the Lego provider

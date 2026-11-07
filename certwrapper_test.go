@@ -2,10 +2,12 @@ package main
 
 import (
 	"errors"
+	"flag"
 	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/go-acme/lego/v5/certcrypto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -98,4 +100,37 @@ func TestCheckCertificate(t *testing.T) {
 			},
 		)
 	}
+}
+
+func TestParseKeyType(t *testing.T) {
+	tests := []struct {
+		name     string
+		expected certcrypto.KeyType
+	}{
+		{"EC384", certcrypto.EC384},
+		{"rsa4096", certcrypto.RSA4096},
+		{"P256", certcrypto.EC256},
+		{"p384", certcrypto.EC384},
+		{"2048", certcrypto.RSA2048},
+	}
+	for _, tt := range tests {
+		t.Run(
+			tt.name,
+			func(t *testing.T) {
+				kt, err := parseKeyType(tt.name)
+				require.NoError(t, err)
+				assert.Equal(t, tt.expected, kt)
+			},
+		)
+	}
+}
+
+func TestParseKeyType_invalid(t *testing.T) {
+	_, err := parseKeyType("P521")
+	assert.Error(t, err)
+}
+
+func TestParseKeyType_defaultIsValid(t *testing.T) {
+	_, err := parseKeyType(flag.Lookup("key-type").DefValue)
+	assert.NoError(t, err)
 }
