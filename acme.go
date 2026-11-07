@@ -9,8 +9,11 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
+	"log/slog"
 	"os"
 	"path/filepath"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/csmith/legotapas/v2"
@@ -144,7 +147,41 @@ func (c *CertificateManager) NeedsCertificate() bool {
 		return true
 	}
 
+	if !sameDomains(cert.DNSNames, c.domains) {
+		slog.Info(
+			"Certificate domains differ from configuration, obtaining a new certificate",
+			"certificate",
+			cert.DNSNames,
+			"configured",
+			c.domains,
+		)
+		return true
+	}
+
+	if keyType, err := certcrypto.GetCertificateKeyType(cert); err == nil && keyType != c.keyType {
+		slog.Info(
+			"Certificate key type differs from configuration, obtaining a new certificate",
+			"certificate",
+			keyType,
+			"configured",
+			c.keyType,
+		)
+		return true
+	}
+
 	return time.Until(cert.NotAfter) < cert.NotAfter.Sub(cert.NotBefore)/3
+}
+
+func sameDomains(a, b []string) bool {
+	normalise := func(domains []string) []string {
+		res := make([]string, len(domains))
+		for i := range domains {
+			res[i] = strings.ToLower(domains[i])
+		}
+		slices.Sort(res)
+		return slices.Compact(res)
+	}
+	return slices.Equal(normalise(a), normalise(b))
 }
 
 func (c *CertificateManager) HasValidCertificate() bool {

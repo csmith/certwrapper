@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -15,6 +16,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-acme/lego/v5/certcrypto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -23,6 +25,8 @@ func newTestManager(t *testing.T) *CertificateManager {
 	t.Helper()
 	dir := t.TempDir()
 	return &CertificateManager{
+		keyType:         certcrypto.EC256,
+		domains:         []string{"example.com"},
 		certificatePath: filepath.Join(dir, "certificate.pem"),
 		privateKeyPath:  filepath.Join(dir, "privatekey.pem"),
 	}
@@ -37,24 +41,39 @@ func newTestUser(t *testing.T) *AcmeUser {
 
 func generateKeyPair(t *testing.T, notBefore, notAfter time.Time) (certPEM, keyPEM []byte) {
 	t.Helper()
+	return generateCustomKeyPair(t, generateKey(t, certcrypto.EC256), notBefore, notAfter, "example.com")
+}
 
-	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+func generateKey(t *testing.T, keyType certcrypto.KeyType) crypto.Signer {
+	t.Helper()
+	key, err := certcrypto.GeneratePrivateKey(keyType)
 	require.NoError(t, err)
+	return key
+}
+
+func generateCustomKeyPair(
+	t *testing.T,
+	key crypto.Signer,
+	notBefore, notAfter time.Time,
+	domains ...string,
+) (certPEM, keyPEM []byte) {
+	t.Helper()
 
 	template := &x509.Certificate{
 		SerialNumber: big.NewInt(1),
-		Subject:      pkix.Name{CommonName: "example.com"},
+		Subject:      pkix.Name{CommonName: domains[0]},
+		DNSNames:     domains,
 		NotBefore:    notBefore,
 		NotAfter:     notAfter,
 	}
-	der, err := x509.CreateCertificate(rand.Reader, template, template, &key.PublicKey, key)
+	der, err := x509.CreateCertificate(rand.Reader, template, template, key.Public(), key)
 	require.NoError(t, err)
 
-	keyDER, err := x509.MarshalECPrivateKey(key)
+	keyDER, err := x509.MarshalPKCS8PrivateKey(key)
 	require.NoError(t, err)
 
 	return pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der}),
-		pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: keyDER})
+		pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: keyDER})
 }
 
 func writeKeyPair(t *testing.T, c *CertificateManager, certPEM, keyPEM []byte) {
@@ -103,6 +122,83 @@ func TestNeedsCertificate(t *testing.T) {
 			assert.True(t, newTestManager(t).NeedsCertificate())
 		},
 	)
+}
+
+func TestNeedsCertificate_domainChanges(t *testing.T) {
+	now := time.Now()
+	key := generateKey(t, certcrypto.EC256)
+
+	tests := []struct {
+		name        string
+		certDomains []string
+		configured  []string
+		expected    bool
+	}{
+		{"different order", []string{"a.example.com", "b.example.com"}, []string{"b.example.com", "a.example.com"}, false},
+		{"different case", []string{"example.com"}, []string{"Example.COM"}, false},
+		{"duplicate configured domain", []string{"example.com"}, []string{"example.com", "example.com"}, false},
+		{"matching wildcard", []string{"example.com", "*.example.com"}, []string{"*.example.com", "example.com"}, false},
+		{"domain added", []string{"example.com"}, []string{"example.com", "www.example.com"}, true},
+		{"domain removed", []string{"example.com", "www.example.com"}, []string{"example.com"}, true},
+		{"domain replaced", []string{"example.com"}, []string{"example.org"}, true},
+		{"wildcard replaced by its base domain", []string{"*.example.com"}, []string{"example.com"}, true},
+	}
+	for _, tt := range tests {
+		t.Run(
+			tt.name,
+			func(t *testing.T) {
+				c := newTestManager(t)
+				c.domains = tt.configured
+				certPEM, keyPEM := generateCustomKeyPair(
+					t,
+					key,
+					now.Add(-time.Hour),
+					now.AddDate(0, 0, 90),
+					tt.certDomains...,
+				)
+				writeKeyPair(t, c, certPEM, keyPEM)
+				assert.Equal(t, tt.expected, c.NeedsCertificate())
+			},
+		)
+	}
+}
+
+func TestNeedsCertificate_keyTypeChanges(t *testing.T) {
+	now := time.Now()
+	p521Key, err := ecdsa.GenerateKey(elliptic.P521(), rand.Reader)
+	require.NoError(t, err)
+
+	tests := []struct {
+		name       string
+		certKey    crypto.Signer
+		configured certcrypto.KeyType
+		expected   bool
+	}{
+		{"same key type", generateKey(t, certcrypto.EC384), certcrypto.EC384, false},
+		{"different curve", generateKey(t, certcrypto.EC256), certcrypto.EC384, true},
+		{"EC to RSA", generateKey(t, certcrypto.EC384), certcrypto.RSA2048, true},
+		{"RSA to EC", generateKey(t, certcrypto.RSA2048), certcrypto.EC256, true},
+		{"different RSA size", generateKey(t, certcrypto.RSA2048), certcrypto.RSA3072, true},
+		{"unknown certificate key type", p521Key, certcrypto.EC384, false},
+	}
+	for _, tt := range tests {
+		t.Run(
+			tt.name,
+			func(t *testing.T) {
+				c := newTestManager(t)
+				c.keyType = tt.configured
+				certPEM, keyPEM := generateCustomKeyPair(
+					t,
+					tt.certKey,
+					now.Add(-time.Hour),
+					now.AddDate(0, 0, 90),
+					"example.com",
+				)
+				writeKeyPair(t, c, certPEM, keyPEM)
+				assert.Equal(t, tt.expected, c.NeedsCertificate())
+			},
+		)
+	}
 }
 
 func TestHasValidCertificate(t *testing.T) {

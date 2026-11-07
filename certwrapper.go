@@ -128,7 +128,7 @@ func main() {
 		*certificatePath,
 		*issuerCertPath,
 		*acmeEmail,
-		strings.Split(*domains, ","),
+		splitDomains(*domains),
 	)
 
 	if err != nil {
@@ -160,6 +160,16 @@ func main() {
 	go waitForCommandToExit(cmd)
 	go monitorCertificate(cm, cmd)
 	proxySignals(cmd)
+}
+
+func splitDomains(list string) []string {
+	var res []string
+	for domain := range strings.SplitSeq(list, ",") {
+		if domain = strings.TrimSpace(domain); domain != "" {
+			res = append(res, domain)
+		}
+	}
+	return res
 }
 
 // childEnv returns environ without the variables matching any of the patterns.

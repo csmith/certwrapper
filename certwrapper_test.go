@@ -162,3 +162,11 @@ func TestChildEnv_neverNil(t *testing.T) {
 	assert.NotNil(t, env)
 	assert.Empty(t, env)
 }
+
+func TestSplitDomains(t *testing.T) {
+	assert.Equal(
+		t,
+		[]string{"example.com", "*.example.com", "www.example.com"},
+		splitDomains(" example.com, *.example.com ,,www.example.com,"),
+	)
+}
