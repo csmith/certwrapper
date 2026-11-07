@@ -31,6 +31,8 @@ Certwrapper options:
         Type of private key to use when generating a certificate. One of: EC256, EC384, RSA2048, RSA3072, RSA4096, RSA8192. (default "EC384")
   -private-key-path string
         Path to save the private key. (default "cert/privatekey.pem")
+  -strip-env string
+        Comma-separated list of environment variables to withhold from the target, such as DNS provider credentials. A trailing * matches any variable starting with the preceding text.
   -user-path string
         Path to save user registration data. (default "cert/user.json")
 ```
@@ -44,6 +46,10 @@ page.
 
 Alternatively, `certwrapper` can be configured using environment variables prefixed with `CERTWRAPPER_`, for
 example the `private-key-path` flag can be set using a `CERTWRAPPER_PRIVATE_KEY_PATH` env var. 
+
+The target inherits certwrapper's environment, except for the `CERTWRAPPER_` variables and anything listed in
+`strip-env`. Use it to keep DNS provider credentials out of the target's environment, for example
+`-strip-env 'CF_*,CLOUDFLARE_*'`, so they can't end up in its logs or error pages.
 
 certwrapper will connect the target binary's stdin, stderr and stdout to its own. It will also relay any
 SIGINT, SIGTERM, SIGHUP, SIGUSR1 and SIGUSR2 signals to the child process.

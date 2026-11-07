@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"slices"
 	"strings"
 	"syscall"
 	"time"
@@ -38,6 +39,12 @@ var (
 	issuerCertPath  = flag.String("issuer-path", "cert/issuer.pem", "Path to save the issuer's certificate.")
 	acmeEmail       = flag.String("acme-email", "", "E-mail address to supply to the ACME server.")
 	domains         = flag.String("domains", "", "Comma-separated list of domains to request on the certificate.")
+	stripEnv        = flag.String(
+		"strip-env",
+		"",
+		"Comma-separated list of environment variables to withhold from the target, such as DNS provider credentials. "+
+			"A trailing * matches any variable starting with the preceding text.",
+	)
 )
 
 func parseFlags() certcrypto.KeyType {
@@ -138,6 +145,7 @@ func main() {
 	}
 
 	cmd := exec.CommandContext(context.Background(), args[0], args[1:]...)
+	cmd.Env = childEnv(os.Environ(), append(strings.Split(*stripEnv, ","), "CERTWRAPPER_*"))
 	cmd.Stdin = os.Stdin
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
@@ -150,6 +158,27 @@ func main() {
 	go waitForCommandToExit(cmd)
 	go monitorCertificate(cm, cmd)
 	proxySignals(cmd)
+}
+
+// childEnv returns environ without the variables matching any of the patterns.
+func childEnv(environ, patterns []string) []string {
+	// A nil Env makes exec.Cmd inherit the whole environment, so this must never be nil.
+	env := []string{}
+	for _, kv := range environ {
+		name, _, _ := strings.Cut(kv, "=")
+		if !slices.ContainsFunc(patterns, func(pattern string) bool { return envMatches(name, pattern) }) {
+			env = append(env, kv)
+		}
+	}
+	return env
+}
+
+func envMatches(name, pattern string) bool {
+	pattern = strings.TrimSpace(pattern)
+	if prefix, ok := strings.CutSuffix(pattern, "*"); ok {
+		return strings.HasPrefix(name, prefix)
+	}
+	return pattern != "" && name == pattern
 }
 
 func proxySignals(cmd *exec.Cmd) {

@@ -134,3 +134,26 @@ func TestParseKeyType_defaultIsValid(t *testing.T) {
 	_, err := parseKeyType(flag.Lookup("key-type").DefValue)
 	assert.NoError(t, err)
 }
+
+func TestChildEnv(t *testing.T) {
+	env := childEnv(
+		[]string{
+			"PATH=/usr/bin",
+			"CERTWRAPPER_DOMAINS=example.com",
+			"CF_DNS_API_TOKEN=secret",
+			"CLOUDFLARE_DNS_API_TOKEN=secret",
+			"CLOUDFLARE_EMAIL=me@example.com",
+			"HOME=/root",
+			"VALUE_WITH_EQUALS=a=b",
+		},
+		[]string{"CF_DNS_API_TOKEN", " CLOUDFLARE_* ", "", "HOM", "CERTWRAPPER_*"},
+	)
+
+	assert.Equal(t, []string{"PATH=/usr/bin", "HOME=/root", "VALUE_WITH_EQUALS=a=b"}, env)
+}
+
+func TestChildEnv_neverNil(t *testing.T) {
+	env := childEnv([]string{"CERTWRAPPER_DOMAINS=example.com"}, []string{"CERTWRAPPER_*"})
+	assert.NotNil(t, env)
+	assert.Empty(t, env)
+}
