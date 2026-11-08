@@ -1,5 +1,23 @@
 # Changelog
 
+## 4.4.0 - 2026-11-08
+
+### Major changes
+
+- Updated lego to v5
+- All log output now uses structured logging, configured with `log.level` and `log.format` flags and corresponding env vars
+- `CERTWRAPPER_*` env vars are no longer passed to child processes
+- A new `strip-env` flag and corresponding env var allows other env vars to be filtered out
+- Certificates are renewed when a third of their expiry time is remaining, instead of at a fixed point of 30 days remaining
+- Failed renewals are now logged and retried, with the child process continuing with the previous cert
+
+### Other updates
+
+- Improved permission checks, and argument validation at startup
+- Files are now written atomically and renamed
+- If the configured domain or key type is changed, a certificate matching those is obtained immediately
+- Dependency updates
+
 ## 4.3.0 - 2025-05-18
 
 - Updated legotapas to v1.7.0
