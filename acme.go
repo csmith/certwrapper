@@ -23,6 +23,7 @@ import (
 	"github.com/go-acme/lego/v5/challenge"
 	"github.com/go-acme/lego/v5/lego"
 	"github.com/go-acme/lego/v5/registration"
+	"golang.org/x/net/idna"
 )
 
 type registrationResource struct {
@@ -176,7 +177,12 @@ func sameDomains(a, b []string) bool {
 	normalise := func(domains []string) []string {
 		res := make([]string, len(domains))
 		for i := range domains {
-			res[i] = strings.ToLower(domains[i])
+			// Requested domains are converted to Punycode before ordering, so do the same here.
+			domain := domains[i]
+			if ascii, err := idna.ToASCII(domain); err == nil {
+				domain = ascii
+			}
+			res[i] = strings.ToLower(domain)
 		}
 		slices.Sort(res)
 		return slices.Compact(res)
