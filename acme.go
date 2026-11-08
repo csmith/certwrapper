@@ -21,6 +21,7 @@ import (
 	"github.com/go-acme/lego/v5/certcrypto"
 	"github.com/go-acme/lego/v5/certificate"
 	"github.com/go-acme/lego/v5/challenge"
+	"github.com/go-acme/lego/v5/challenge/dns01"
 	"github.com/go-acme/lego/v5/lego"
 	"github.com/go-acme/lego/v5/registration"
 	"golang.org/x/net/idna"
@@ -283,7 +284,7 @@ func (c *CertificateManager) createClient() error {
 		return err
 	}
 
-	err = client.Challenge.SetDNS01Provider(c.dnsProvider)
+	err = client.Challenge.SetDNS01Provider(c.dnsProvider, dns01.DisableRecursiveNSsPropagationRequirement())
 	if err != nil {
 		return err
 	}
