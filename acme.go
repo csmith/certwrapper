@@ -11,11 +11,11 @@ import (
 	"encoding/json"
 	"log/slog"
 	"os"
-	"path/filepath"
 	"slices"
 	"strings"
 	"time"
 
+	"chameth.com/x/file"
 	"github.com/csmith/legotapas/v2"
 	"github.com/go-acme/lego/v5/acme"
 	"github.com/go-acme/lego/v5/certcrypto"
@@ -132,15 +132,15 @@ func (c *CertificateManager) ObtainCertificate() error {
 		return err
 	}
 
-	if err := writeFileAtomic(c.privateKeyPath, cert.PrivateKey); err != nil {
+	if err := file.Write(c.privateKeyPath, cert.PrivateKey, 0600); err != nil {
 		return err
 	}
 
-	if err := writeFileAtomic(c.certificatePath, cert.Certificate); err != nil {
+	if err := file.Write(c.certificatePath, cert.Certificate, 0600); err != nil {
 		return err
 	}
 
-	return writeFileAtomic(c.issuerCertPath, cert.IssuerCertificate)
+	return file.Write(c.issuerCertPath, cert.IssuerCertificate, 0600)
 }
 
 func (c *CertificateManager) NeedsCertificate() bool {
@@ -249,7 +249,7 @@ func (c *CertificateManager) save() error {
 	if err != nil {
 		return err
 	}
-	return writeFileAtomic(c.metadataPath, data)
+	return file.Write(c.metadataPath, data, 0600)
 }
 
 func (c *CertificateManager) createUser(email string) error {
@@ -304,31 +304,4 @@ func (c *CertificateManager) register() error {
 		return c.save()
 	}
 	return nil
-}
-
-// writeFileAtomic replaces path with a new file with 0600 permissions, leaving any existing file
-// untouched if the write fails. The path's directory must be writable.
-func writeFileAtomic(path string, data []byte) error {
-	tmp, err := os.CreateTemp(filepath.Dir(path), "."+filepath.Base(path)+".*")
-	if err != nil {
-		return err
-	}
-	defer func() {
-		_ = tmp.Close()
-		_ = os.Remove(tmp.Name())
-	}()
-
-	if _, err := tmp.Write(data); err != nil {
-		return err
-	}
-
-	if err := tmp.Sync(); err != nil {
-		return err
-	}
-
-	if err := tmp.Close(); err != nil {
-		return err
-	}
-
-	return os.Rename(tmp.Name(), path)
 }
