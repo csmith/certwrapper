@@ -3,7 +3,7 @@ module github.com/csmith/certwrapper
 go 1.27.4
 
 require (
-	chameth.com/x v0.0.2
+	chameth.com/x v0.0.3
 	github.com/csmith/envflag/v2 v2.0.0
 	github.com/csmith/legotapas/v2 v2.0.0
 	github.com/csmith/slogflags v1.2.0
