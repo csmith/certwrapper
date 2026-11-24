@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Dependency updates, fixing GO-2026-6974 and GO-2026-6278
+
 ## 4.4.0 - 2026-11-08
 
 ### Major changes
