@@ -134,12 +134,27 @@ func TestNeedsCertificate_domainChanges(t *testing.T) {
 		configured  []string
 		expected    bool
 	}{
-		{"different order", []string{"a.example.com", "b.example.com"}, []string{"b.example.com", "a.example.com"}, false},
+		{
+			"different order",
+			[]string{"a.example.com", "b.example.com"},
+			[]string{"b.example.com", "a.example.com"},
+			false,
+		},
 		{"different case", []string{"example.com"}, []string{"Example.COM"}, false},
 		{"duplicate configured domain", []string{"example.com"}, []string{"example.com", "example.com"}, false},
-		{"matching wildcard", []string{"example.com", "*.example.com"}, []string{"*.example.com", "example.com"}, false},
+		{
+			"matching wildcard",
+			[]string{"example.com", "*.example.com"},
+			[]string{"*.example.com", "example.com"},
+			false,
+		},
 		{"unicode domain against punycode", []string{"xn--bcher-kva.example"}, []string{"bücher.example"}, false},
-		{"mixed case unicode domain against punycode", []string{"xn--bcher-kva.example"}, []string{"Bücher.Example"}, false},
+		{
+			"mixed case unicode domain against punycode",
+			[]string{"xn--bcher-kva.example"},
+			[]string{"Bücher.Example"},
+			false,
+		},
 		{"unicode wildcard against punycode", []string{"*.xn--bcher-kva.example"}, []string{"*.bücher.example"}, false},
 		{"different unicode domain", []string{"xn--bcher-kva.example"}, []string{"bucher.example"}, true},
 		{"domain added", []string{"example.com"}, []string{"example.com", "www.example.com"}, true},
